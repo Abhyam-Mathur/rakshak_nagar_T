@@ -1,194 +1,198 @@
-import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
-import { Input } from "@/components/ui/input"
-import { ArrowLeft, Phone, Search, Shield, Zap, Droplets, Car, AlertTriangle } from "lucide-react"
+import { ArrowLeft, Phone, Shield, Building, HeartPulse, Sun } from "lucide-react"
+
+type Language = "en" | "hi" | "bn" | "te";
 
 interface HelplineNumbersProps {
-  onBack: () => void
+  onBack: () => void;
+  language: Language;
 }
 
-const HelplineNumbers = ({ onBack }: HelplineNumbersProps) => {
-  const [searchTerm, setSearchTerm] = useState("")
+const translations = {
+  en: {
+    title: "Emergency Helplines",
+    emergencyServices: "Emergency Services",
+    municipalServices: "Municipal Services",
+    publicUtilities: "Public Utilities",
+    healthSocialServices: "Health & Social Services",
+    police: "Police",
+    fire: "Fire",
+    ambulance: "Ambulance",
+    disasterManagement: "Disaster Management",
+    waterSupply: "Water Supply",
+    wasteManagement: "Waste Management",
+    propertyTax: "Property Tax",
+    birthDeathCert: "Birth/Death Certificates",
+    electricity: "Electricity",
+    gasLeak: "Gas Leak",
+    telecom: "Telecom Services",
+    postalServices: "Postal Services",
+    childHelpline: "Child Helpline",
+    womenHelpline: "Women Helpline",
+    seniorCitizen: "Senior Citizen Helpline",
+    mentalHealth: "Mental Health Support",
+  },
+  hi: {
+    title: "आपातकालीन हेल्पलाइन",
+    emergencyServices: "आपातकालीन सेवाएं",
+    municipalServices: "नगरपालिका सेवाएं",
+    publicUtilities: "सार्वजनिक उपयोगिताएँ",
+    healthSocialServices: "स्वास्थ्य और सामाजिक सेवाएं",
+    police: "पुलिस",
+    fire: "अग्नि",
+    ambulance: "एम्बुलेंस",
+    disasterManagement: "आपदा प्रबंधन",
+    waterSupply: "जल आपूर्ति",
+    wasteManagement: "अपशिष्ट प्रबंधन",
+    propertyTax: " संपत्ति कर",
+    birthDeathCert: "जन्म/मृत्यु प्रमाण पत्र",
+    electricity: "बिजली",
+    gasLeak: "गैस रिसाव",
+    telecom: "दूरसंचार सेवाएं",
+    postalServices: "डाक सेवाएं",
+    childHelpline: "बाल हेल्पलाइन",
+    womenHelpline: "महिला हेल्पलाइन",
+    seniorCitizen: "वरिष्ठ नागरिक हेल्पलाइन",
+    mentalHealth: "मानसिक स्वास्थ्य सहायता",
+  },
+  bn: {
+    title: "জরুরী হেল্পলাইন",
+    emergencyServices: "জরুরী পরিষেবা",
+    municipalServices: "পৌরসভা পরিষেবা",
+    publicUtilities: "পাবলিক ইউটিলিটিস",
+    healthSocialServices: "স্বাস্থ্য ও সমাজসেবা",
+    police: "পুলিশ",
+    fire: "দমকল",
+    ambulance: "অ্যাম্বুলেন্স",
+    disasterManagement: "দুর্যোগ ব্যবস্থাপনা",
+    waterSupply: "জল সরবরাহ",
+    wasteManagement: "বর্জ্য ব্যবস্থাপনা",
+    propertyTax: "সম্পত্তি কর",
+    birthDeathCert: "জন্ম/মৃত্যু সার্টিফিকেট",
+    electricity: "বিদ্যুৎ",
+    gasLeak: "গ্যাস লিক",
+    telecom: "টেলিকম পরিষেবা",
+    postalServices: "ডাক পরিষেবা",
+    childHelpline: "চাইল্ড হেল্পলাইন",
+    womenHelpline: "মহিলা হেল্পলাইন",
+    seniorCitizen: "সিনিয়র সিটিজেন হেল্পলাইন",
+    mentalHealth: "মানসিক স্বাস্থ্য সহায়তা",
+  },
+  te: {
+    title: "అత్యవసర హెల్ప్‌లైన్‌లు",
+    emergencyServices: "అత్యవసర సేవలు",
+    municipalServices: "మునిసిపల్ సేవలు",
+    publicUtilities: "ప్రజా వినియోగాలు",
+    healthSocialServices: "ఆరోగ్యం & సామాజిక సేవలు",
+    police: "పోలీస్",
+    fire: "అగ్ని",
+    ambulance: "అంబులెన్స్",
+    disasterManagement: "విపత్తు నిర్వహణ",
+    waterSupply: "నీటి సరఫరా",
+    wasteManagement: "వ్యర్థ పదార్థాల నిర్వహణ",
+    propertyTax: "ఆస్తి పన్ను",
+    birthDeathCert: "జనన/మరణ ధృవపత్రాలు",
+    electricity: "విద్యుత్",
+    gasLeak: "గ్యాస్ లీక్",
+    telecom: "టెలికాం సేవలు",
+    postalServices: "తపాలా సేవలు",
+    childHelpline: "చైల్డ్ హెల్ప్‌లైన్",
+    womenHelpline: "మహిళా హెల్ప్‌లైన్",
+    seniorCitizen: "సీనియర్ సిటిజన్ హెల్ప్‌లైన్",
+    mentalHealth: "మానసిక ఆరోగ్య మద్దతు",
+  },
+};
 
-  const helplines = [
-    {
-      category: "Emergency Services",
-      icon: Shield,
-      color: "text-red-600 bg-red-100",
-      numbers: [
-        { name: "Police Emergency", number: "100", description: "24/7 Police assistance" },
-        { name: "Fire Brigade", number: "101", description: "Fire emergency & rescue" },
-        { name: "Ambulance/Medical", number: "108", description: "Medical emergency services" },
-        { name: "Disaster Management", number: "1070", description: "Natural disaster helpline" }
-      ]
-    },
-    {
-      category: "Municipal Services", 
-      icon: Car,
-      color: "text-civic-saffron bg-civic-saffron/10",
-      numbers: [
-        { name: "Municipal Corporation", number: "1533", description: "General civic complaints" },
-        { name: "Water Supply", number: "1916", description: "Water related issues" },
-        { name: "Electricity Board", number: "1912", description: "Power outage complaints" },
-        { name: "Gas Emergency", number: "1906", description: "LPG/PNG gas leaks" }
-      ]
-    },
-    {
-      category: "Public Utilities",
-      icon: Zap,
-      color: "text-civic-green bg-civic-green/10", 
-      numbers: [
-        { name: "Railway Enquiry", number: "139", description: "Train schedules & bookings" },
-        { name: "Road Transport", number: "1073", description: "Bus services & routes" },
-        { name: "Tourist Helpline", number: "1363", description: "Tourism assistance" },
-        { name: "Consumer Forum", number: "1800-11-4000", description: "Consumer complaints" }
-      ]
-    },
-    {
-      category: "Health & Social",
-      icon: Droplets,
-      color: "text-civic-blue bg-civic-blue/10",
-      numbers: [
-        { name: "Child Helpline", number: "1098", description: "Child safety & welfare" },
-        { name: "Women Helpline", number: "181", description: "Women safety & support" },
-        { name: "Senior Citizen", number: "14567", description: "Elderly care services" },
-        { name: "Anti-Corruption", number: "1031", description: "Report corruption" }
-      ]
-    }
-  ]
+const HelplineNumbers = ({ onBack, language }: HelplineNumbersProps) => {
+    const t = translations[language];
 
-  const filteredHelplines = helplines.map(category => ({
-    ...category,
-    numbers: category.numbers.filter(
-      helpline => 
-        helpline.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        helpline.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        helpline.number.includes(searchTerm)
-    )
-  })).filter(category => category.numbers.length > 0)
+    const helplines = [
+        {
+            category: t.emergencyServices,
+            icon: <Shield className="h-6 w-6 text-red-500" />,
+            contacts: [
+                { name: t.police, number: "100" },
+                { name: t.fire, number: "101" },
+                { name: t.ambulance, number: "102" },
+                { name: t.disasterManagement, number: "108" },
+            ]
+        },
+        {
+            category: t.municipalServices,
+            icon: <Building className="h-6 w-6 text-blue-500" />,
+            contacts: [
+                { name: t.waterSupply, number: "1800-425-1234" },
+                { name: t.wasteManagement, number: "1800-425-5369" },
+                { name: t.propertyTax, number: "1800-425-4567" },
+                { name: t.birthDeathCert, number: "1800-425-4567" },
+            ]
+        },
+        {
+            category: t.publicUtilities,
+            icon: <Sun className="h-6 w-6 text-yellow-500" />,
+            contacts: [
+                { name: t.electricity, number: "1912" },
+                { name: t.gasLeak, number: "1906" },
+                { name: t.telecom, number: "198" },
+                { name: t.postalServices, number: "1800-266-6868" },
+            ]
+        },
+        {
+            category: t.healthSocialServices,
+            icon: <HeartPulse className="h-6 w-6 text-green-500" />,
+            contacts: [
+                { name: t.childHelpline, number: "1098" },
+                { name: t.womenHelpline, number: "1091" },
+                { name: t.seniorCitizen, number: "14567" },
+                { name: t.mentalHealth, number: "1800-599-0019" },
+            ]
+        },
+    ]
 
-  const handleCall = (number: string) => {
-    window.location.href = `tel:${number}`
-  }
+    return (
+        <div className="min-h-screen bg-gradient-to-br from-background to-civic-blue-light">
+          <div className="bg-white/90 backdrop-blur-sm shadow-sm border-b border-civic-blue/20">
+            <div className="flex items-center p-4 max-w-md mx-auto">
+              <Button variant="ghost" size="icon" onClick={onBack} className="mr-3">
+                <ArrowLeft className="h-5 w-5" />
+              </Button>
+              <h1 className="text-xl font-semibold">{t.title}</h1>
+            </div>
+          </div>
 
-  return (
-    <div className="min-h-screen bg-gradient-to-br from-civic-blue/10 to-background">
-      {/* Header */}
-      <div className="bg-white/90 backdrop-blur-sm shadow-sm border-b border-civic-blue/20">
-        <div className="flex items-center p-4 max-w-md mx-auto">
-          <Button variant="ghost" size="icon" onClick={onBack} className="mr-3">
-            <ArrowLeft className="h-5 w-5" />
-          </Button>
-          <div>
-            <h1 className="text-xl font-semibold">Emergency Helplines</h1>
-            <p className="text-sm text-muted-foreground">24/7 support services</p>
+          <div className="p-6 max-w-md mx-auto space-y-6">
+            {helplines.map((group) => (
+                <Card key={group.category} className="border-civic-blue/20">
+                    <CardHeader>
+                        <CardTitle className="flex items-center gap-3">
+                            {group.icon}
+                            {group.category}
+                        </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                        <ul className="space-y-3">
+                            {group.contacts.map((contact) => (
+                                <li key={contact.name} className="flex items-center justify-between p-3 bg-civic-blue/5 rounded-lg">
+                                    <span className="font-medium">{contact.name}</span>
+                                    <Button 
+                                        variant="outline" 
+                                        size="sm" 
+                                        className="border-civic-blue text-civic-blue hover:bg-civic-blue hover:text-white"
+                                        onClick={() => window.open(`tel:${contact.number}`)}
+                                    >
+                                        <Phone className="h-4 w-4 mr-2" />
+                                        {contact.number}
+                                    </Button>
+                                </li>
+                            ))}
+                        </ul>
+                    </CardContent>
+                </Card>
+            ))}
           </div>
         </div>
-      </div>
-
-      <div className="p-6 max-w-md mx-auto space-y-6">
-        {/* Search */}
-        <Card className="border-civic-blue/20">
-          <CardContent className="p-4">
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input
-                placeholder="Search helplines..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10"
-              />
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Emergency Alert */}
-        <Card className="border-red-200 bg-red-50">
-          <CardContent className="p-4">
-            <div className="flex items-center gap-3">
-              <AlertTriangle className="h-8 w-8 text-red-600" />
-              <div>
-                <h3 className="font-semibold text-red-900">Emergency?</h3>
-                <p className="text-sm text-red-700">Call 112 for immediate assistance</p>
-              </div>
-              <Button 
-                variant="destructive" 
-                size="sm"
-                onClick={() => handleCall('112')}
-              >
-                Call 112
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Helpline Categories */}
-        {filteredHelplines.map((category, categoryIndex) => (
-          <Card key={categoryIndex} className="border-civic-saffron/20">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-3">
-                <div className={`p-2 rounded-full ${category.color}`}>
-                  <category.icon className="h-5 w-5" />
-                </div>
-                {category.category}
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              {category.numbers.map((helpline, index) => (
-                <div key={index} className="flex items-center justify-between p-3 bg-muted/30 rounded-lg">
-                  <div className="flex-1">
-                    <h4 className="font-medium text-sm">{helpline.name}</h4>
-                    <p className="text-xs text-muted-foreground">{helpline.description}</p>
-                  </div>
-                  
-                  <div className="flex items-center gap-2">
-                    <Badge variant="outline" className="font-mono">
-                      {helpline.number}
-                    </Badge>
-                    <Button 
-                      variant="default"
-                      size="sm"
-                      onClick={() => handleCall(helpline.number)}
-                      className="bg-civic-green hover:bg-civic-green/90"
-                    >
-                      <Phone className="h-4 w-4" />
-                    </Button>
-                  </div>
-                </div>
-              ))}
-            </CardContent>
-          </Card>
-        ))}
-
-        {/* No Results */}
-        {searchTerm && filteredHelplines.length === 0 && (
-          <Card className="border-civic-saffron/20">
-            <CardContent className="p-8 text-center">
-              <Search className="h-12 w-12 text-muted-foreground mx-auto mb-3" />
-              <h3 className="font-semibold mb-2">No results found</h3>
-              <p className="text-sm text-muted-foreground">
-                Try searching with different keywords
-              </p>
-            </CardContent>
-          </Card>
-        )}
-
-        {/* Info Footer */}
-        <Card className="border-civic-saffron/20 bg-civic-saffron/5">
-          <CardContent className="p-4 text-center">
-            <Phone className="h-8 w-8 text-civic-saffron mx-auto mb-2" />
-            <h3 className="font-semibold mb-2">Important Note</h3>
-            <p className="text-sm text-muted-foreground">
-              All emergency numbers are toll-free and available 24/7. 
-              Keep this list handy for quick access.
-            </p>
-          </CardContent>
-        </Card>
-      </div>
-    </div>
-  )
+    )
 }
 
 export default HelplineNumbers

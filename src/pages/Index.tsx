@@ -6,7 +6,7 @@ import ComplaintTracking from "../components/ComplaintTracking.tsx";
 import HelplineNumbers from "../components/HelplineNumbers.tsx";
 import AdminPortal from "../components/AdminPortal.tsx";
 import Signup from "../components/Signup.tsx";
-
+import { useLanguage } from "../contexts/LanguageContext.tsx";
 
 // Pure helper so we can unit-test the back-navigation logic
 export const nextScreenAfterBack = (current: string): 'dashboard' | 'splash' => {
@@ -17,6 +17,7 @@ export const nextScreenAfterBack = (current: string): 'dashboard' | 'splash' => 
 
 const Index = () => {
   const [currentScreen, setCurrentScreen] = useState<string>('splash');
+  const { language, setLanguage } = useLanguage();
 
   const handleNavigation = (screen: string) => {
     setCurrentScreen(screen);
@@ -29,29 +30,32 @@ const Index = () => {
   const renderScreen = () => {
     switch (currentScreen) {
       case 'splash':
-        return <SplashScreen onNavigate={handleNavigation} />;
+        return <SplashScreen onNavigate={handleNavigation} language={language} setLanguage={setLanguage} />;
 
       case 'login':
       case 'signup':
-        return <Signup onBack={() => setCurrentScreen('splash')} onNavigate={handleNavigation} />;
+        return <Signup onBack={() => setCurrentScreen('splash')} onNavigate={handleNavigation} language={language} />;
 
       case 'dashboard':
-        return <Dashboard onBack={handleBack} onNavigate={handleNavigation} />;
+        return <Dashboard onBack={handleBack} onNavigate={handleNavigation} language={language} />;
 
       case 'complaint':
-        return <ComplaintRegistration onBack={handleBack} />;
+        // Pass the dynamic language state
+        return <ComplaintRegistration onBack={handleBack} language={language} />;
 
       case 'tracking':
-        return <ComplaintTracking onBack={handleBack} />;
+        // Pass the language prop
+        return <ComplaintTracking onBack={handleBack} language={language} />;
 
       case 'helpline':
-        return <HelplineNumbers onBack={handleBack} />;
+         // Pass the language prop
+        return <HelplineNumbers onBack={handleBack} language={language} />;
 
       case 'admin':
         return <AdminPortal onBack={handleBack} />;
 
       default:
-        return <SplashScreen onNavigate={handleNavigation} />;
+        return <SplashScreen onNavigate={handleNavigation} language={language} setLanguage={setLanguage} />;
     }
   };
 

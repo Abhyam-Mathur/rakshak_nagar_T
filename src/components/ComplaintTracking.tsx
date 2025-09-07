@@ -8,33 +8,118 @@ import { ArrowLeft, Search, Clock, CheckCircle, User, MapPin, Phone } from "luci
 import { useToast } from "@/hooks/use-toast"
 import { supabase } from "@/integrations/supabase/client"
 
+type Language = "en" | "hi" | "bn" | "te";
+
+// 1. Update the interface to accept the language prop
 interface ComplaintTrackingProps {
-  onBack: () => void
+  onBack: () => void;
+  language: Language;
 }
 
-const ComplaintTracking = ({ onBack }: ComplaintTrackingProps) => {
+// 2. Create the translations object
+const translations = {
+  en: {
+    title: "Track Complaint",
+    searchTitle: "Enter Complaint ID",
+    complaintIdLabel: "Complaint ID",
+    complaintIdPlaceholder: "e.g., NGR123456",
+    trackButton: "Track Status",
+    searchingButton: "Searching...",
+    timelineTitle: "Status Timeline",
+    assignedAuthority: "Assigned Authority",
+    callButton: "Call",
+    trackYourComplaint: "Track Your Complaint",
+    trackInstruction: "Enter your complaint ID to see real-time status updates and contact information.",
+    realTimeBadge: "Real-time Tracking",
+    contactLabel: "Contact",
+    submittedLabel: "Submitted",
+    // Timeline statuses
+    Registered: "Registered",
+    Assigned: "Assigned",
+    'In-Progress': "In Progress",
+    Resolved: "Resolved",
+  },
+  hi: {
+    title: "शिकायत ट्रैक करें",
+    searchTitle: "शिकायत आईडी दर्ज करें",
+    complaintIdLabel: "शिकायत आईडी",
+    complaintIdPlaceholder: "उदा., NGR123456",
+    trackButton: "स्थिति ट्रैक करें",
+    searchingButton: "खोज रहा है...",
+    timelineTitle: "स्थिति समयरेखा",
+    assignedAuthority: "सौंपा गया अधिकारी",
+    callButton: "कॉल करें",
+    trackYourComplaint: "अपनी शिकायत ट्रैक करें",
+    trackInstruction: "वास्तविक समय की स्थिति अपडेट और संपर्क जानकारी देखने के लिए अपनी शिकायत आईडी दर्ज करें।",
+    realTimeBadge: "वास्तविक समय ट्रैकिंग",
+    contactLabel: "संपर्क",
+    submittedLabel: "प्रस्तुत",
+    Registered: "पंजीकृत",
+    Assigned: "सौंपा गया",
+    'In-Progress': "प्रगति में",
+    Resolved: "हल हो गई",
+  },
+  bn: {
+    title: "অভিযোগ ট্র্যাক করুন",
+    searchTitle: "অভিযোগ আইডি লিখুন",
+    complaintIdLabel: "অভিযোগ আইডি",
+    complaintIdPlaceholder: "যেমন, NGR123456",
+    trackButton: "স্ট্যাটাস ট্র্যাক করুন",
+    searchingButton: "অনুসন্ধান চলছে...",
+    timelineTitle: "স্ট্যাটাস টাইমলাইন",
+    assignedAuthority: "নিযুক্ত কর্তৃপক্ষ",
+    callButton: "কল করুন",
+    trackYourComplaint: "আপনার অভিযোগ ট্র্যাক করুন",
+    trackInstruction: "রিয়েল-টাইম স্ট্যাটাস আপডেট এবং যোগাযোগের তথ্য দেখতে আপনার অভিযোগ আইডি লিখুন।",
+    realTimeBadge: "রিয়েল-টাইম ট্র্যাকিং",
+    contactLabel: "যোগাযোগ",
+    submittedLabel: "জমা দেওয়া হয়েছে",
+    Registered: "নিবন্ধিত",
+    Assigned: "নিযুক্ত",
+    'In-Progress': "চলমান",
+    Resolved: "সমাধান হয়েছে",
+  },
+  te: {
+    title: "ఫిర్యాదును ట్రాక్ చేయండి",
+    searchTitle: "ఫిర్యాదు IDని నమోదు చేయండి",
+    complaintIdLabel: "ఫిర్యాదు ID",
+    complaintIdPlaceholder: "ఉదా., NGR123456",
+    trackButton: "స్థితిని ట్రాక్ చేయండి",
+    searchingButton: "వెతుకుతోంది...",
+    timelineTitle: "స్థితి కాలక్రమం",
+    assignedAuthority: "కేటాయించిన అధికారి",
+    callButton: "కాల్ చేయండి",
+    trackYourComplaint: "మీ ఫిర్యాదును ట్రాక్ చేయండి",
+    trackInstruction: "నిజ-సమయ స్థితి నవీకరణలు మరియు సంప్రదింపు సమాచారాన్ని చూడటానికి మీ ఫిర్యాదు IDని నమోదు చేయండి.",
+    realTimeBadge: "నిజ-సమయ ట్రాకింగ్",
+    contactLabel: "సంప్రదించండి",
+    submittedLabel: "సమర్పించబడింది",
+    Registered: "నమోదు చేయబడింది",
+    Assigned: "కేటాయించబడింది",
+    'In-Progress': "ప్రోగ్రెస్‌లో ఉంది",
+    Resolved: "పరిష్కరించబడింది",
+  },
+};
+
+const ComplaintTracking = ({ onBack, language }: ComplaintTrackingProps) => {
   const [searchId, setSearchId] = useState("")
   const [complaint, setComplaint] = useState<any>(null)
   const [statusUpdates, setStatusUpdates] = useState<any[]>([])
   const [loading, setLoading] = useState(false)
   const { toast } = useToast()
+  const t = translations[language]; // 3. Use the language prop
 
   useEffect(() => {
     if (complaint) {
-      // Set up real-time subscription for this complaint
       const channel = supabase
         .channel(`complaint-${complaint.id}`)
         .on('postgres_changes', 
           { event: '*', schema: 'public', table: 'complaint_status_updates', filter: `complaint_id=eq.${complaint.id}` },
-          () => {
-            handleSearch() // Refresh complaint data
-          }
+          () => { handleSearch() }
         )
         .on('postgres_changes',
           { event: 'UPDATE', schema: 'public', table: 'complaints', filter: `id=eq.${complaint.id}` },
-          () => {
-            handleSearch() // Refresh complaint data
-          }
+          () => { handleSearch() }
         )
         .subscribe()
 
@@ -46,17 +131,11 @@ const ComplaintTracking = ({ onBack }: ComplaintTrackingProps) => {
 
   const handleSearch = async () => {
     if (!searchId.trim()) {
-      toast({
-        title: "Please enter a complaint ID",
-        variant: "destructive"
-      })
+      toast({ title: "Please enter a complaint ID", variant: "destructive" })
       return
     }
-
     setLoading(true)
-    
     try {
-      // Search for complaint by complaint_code
       const { data: complaintData, error: complaintError } = await supabase
         .from('complaints')
         .select('*')
@@ -64,16 +143,11 @@ const ComplaintTracking = ({ onBack }: ComplaintTrackingProps) => {
         .single()
 
       if (complaintError || !complaintData) {
-        toast({
-          title: "Complaint Not Found",
-          description: "Please check the complaint ID and try again",
-          variant: "destructive"
-        })
+        toast({ title: "Complaint Not Found", description: "Please check the complaint ID and try again", variant: "destructive" })
         setLoading(false)
         return
       }
 
-      // Fetch status updates
       const { data: updatesData, error: updatesError } = await supabase
         .from('complaint_status_updates')
         .select('*')
@@ -86,18 +160,10 @@ const ComplaintTracking = ({ onBack }: ComplaintTrackingProps) => {
       setStatusUpdates(updatesData || [])
       setLoading(false)
       
-      toast({
-        title: "Complaint Found",
-        description: `Status: ${complaintData.status}`,
-        variant: "default"
-      })
+      toast({ title: "Complaint Found", description: `Status: ${complaintData.status}`, variant: "default" })
     } catch (error) {
       console.error('Error fetching complaint:', error)
-      toast({
-        title: "Error",
-        description: "Failed to fetch complaint details",
-        variant: "destructive"
-      })
+      toast({ title: "Error", description: "Failed to fetch complaint details", variant: "destructive" })
       setLoading(false)
     }
   }
@@ -105,7 +171,7 @@ const ComplaintTracking = ({ onBack }: ComplaintTrackingProps) => {
   const generateTimeline = () => {
     if (!complaint) return []
     
-    const statuses = ['Registered', 'Assigned', 'In-Progress', 'Resolved']
+    const statuses: Array<keyof typeof t> = ['Registered', 'Assigned', 'In-Progress', 'Resolved']
     const currentStatusIndex = statuses.indexOf(complaint.status)
     
     return statuses.map((status, index) => {
@@ -113,10 +179,8 @@ const ComplaintTracking = ({ onBack }: ComplaintTrackingProps) => {
       const isCompleted = index <= currentStatusIndex
       
       return {
-        status,
-        timestamp: statusUpdate 
-          ? new Date(statusUpdate.created_at).toLocaleString() 
-          : (isCompleted ? 'Processing...' : ''),
+        status: t[status] || status, // Translate the status
+        timestamp: statusUpdate ? new Date(statusUpdate.created_at).toLocaleString() : (isCompleted ? 'Processing...' : ''),
         completed: isCompleted,
         authority: statusUpdate?.assigned_to,
         contact: statusUpdate?.assigned_contact,
@@ -143,7 +207,7 @@ const ComplaintTracking = ({ onBack }: ComplaintTrackingProps) => {
           <Button variant="ghost" size="icon" onClick={onBack} className="mr-3">
             <ArrowLeft className="h-5 w-5" />
           </Button>
-          <h1 className="text-xl font-semibold">Track Complaint</h1>
+          <h1 className="text-xl font-semibold">{t.title}</h1>
         </div>
       </div>
 
@@ -153,15 +217,15 @@ const ComplaintTracking = ({ onBack }: ComplaintTrackingProps) => {
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Search className="h-5 w-5 text-civic-green" />
-              Enter Complaint ID
+              {t.searchTitle}
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
             <div>
-              <Label htmlFor="complaint-id">Complaint ID</Label>
+              <Label htmlFor="complaint-id">{t.complaintIdLabel}</Label>
               <Input 
                 id="complaint-id"
-                placeholder="e.g., NGR123456"
+                placeholder={t.complaintIdPlaceholder}
                 value={searchId}
                 onChange={(e) => setSearchId(e.target.value)}
               />
@@ -173,7 +237,7 @@ const ComplaintTracking = ({ onBack }: ComplaintTrackingProps) => {
               disabled={loading}
             >
               <Search className="h-4 w-4 mr-2" />
-              {loading ? "Searching..." : "Track Status"}
+              {loading ? t.searchingButton : t.trackButton}
             </Button>
           </CardContent>
         </Card>
@@ -181,13 +245,12 @@ const ComplaintTracking = ({ onBack }: ComplaintTrackingProps) => {
         {/* Complaint Details */}
         {complaint && (
           <div className="space-y-4">
-            {/* Complaint Info */}
             <Card className="border-civic-saffron/20">
               <CardHeader>
                 <CardTitle className="flex items-center justify-between">
                   <span>{complaint.issue_type}</span>
                   <Badge className={getStatusColor(complaint.status)}>
-                    {complaint.status}
+                    {t[complaint.status as keyof typeof t] || complaint.status}
                   </Badge>
                 </CardTitle>
               </CardHeader>
@@ -207,20 +270,19 @@ const ComplaintTracking = ({ onBack }: ComplaintTrackingProps) => {
                   </div>
                 )}
                 <div className="bg-civic-saffron/5 rounded-lg p-3">
-                  <p className="text-sm font-medium">Complaint ID: {complaint.complaint_code}</p>
+                  <p className="text-sm font-medium">{t.complaintIdLabel}: {complaint.complaint_code}</p>
                   <p className="text-xs text-muted-foreground">
-                    Submitted: {new Date(complaint.created_at).toLocaleDateString()}
+                    {t.submittedLabel}: {new Date(complaint.created_at).toLocaleDateString()}
                   </p>
                 </div>
               </CardContent>
             </Card>
 
-            {/* Timeline */}
             <Card className="border-civic-green/20">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <Clock className="h-5 w-5 text-civic-green" />
-                  Status Timeline
+                  {t.timelineTitle}
                 </CardTitle>
               </CardHeader>
               <CardContent>
@@ -267,7 +329,7 @@ const ComplaintTracking = ({ onBack }: ComplaintTrackingProps) => {
                             </div>
                             {step.contact && (
                               <div className="flex items-center justify-between">
-                                <span className="text-muted-foreground">Contact: {step.contact}</span>
+                                <span className="text-muted-foreground">{t.contactLabel}: {step.contact}</span>
                                 <Button
                                   variant="ghost"
                                   size="sm"
@@ -275,7 +337,7 @@ const ComplaintTracking = ({ onBack }: ComplaintTrackingProps) => {
                                   onClick={() => window.open(`tel:${step.contact}`)}
                                 >
                                   <Phone className="h-3 w-3 mr-1" />
-                                  Call
+                                  {t.callButton}
                                 </Button>
                               </div>
                             )}
@@ -288,13 +350,12 @@ const ComplaintTracking = ({ onBack }: ComplaintTrackingProps) => {
               </CardContent>
             </Card>
 
-            {/* Authority Contact */}
             {complaint.status !== 'Resolved' && statusUpdates.find(update => update.assigned_to) && (
               <Card className="border-civic-blue/20 bg-civic-blue/5">
                 <CardContent className="p-4">
                   <div className="flex items-center justify-between">
                     <div>
-                      <h4 className="font-medium">Assigned Authority</h4>
+                      <h4 className="font-medium">{t.assignedAuthority}</h4>
                       <p className="text-sm text-muted-foreground">
                         {statusUpdates.find(update => update.assigned_to)?.assigned_to}
                       </p>
@@ -306,7 +367,7 @@ const ComplaintTracking = ({ onBack }: ComplaintTrackingProps) => {
                         className="border-civic-blue text-civic-blue hover:bg-civic-blue hover:text-white"
                         onClick={() => window.open(`tel:${statusUpdates.find(update => update.assigned_contact)?.assigned_contact}`)}
                       >
-                        Call: {statusUpdates.find(update => update.assigned_contact)?.assigned_contact}
+                        {t.callButton}: {statusUpdates.find(update => update.assigned_contact)?.assigned_contact}
                       </Button>
                     )}
                   </div>
@@ -316,17 +377,16 @@ const ComplaintTracking = ({ onBack }: ComplaintTrackingProps) => {
           </div>
         )}
 
-        {/* Instructions */}
         {!complaint && (
           <Card className="border-civic-saffron/20 bg-civic-saffron/5">
             <CardContent className="p-4 text-center">
               <Search className="h-12 w-12 text-civic-saffron mx-auto mb-3" />
-              <h3 className="font-semibold mb-2">Track Your Complaint</h3>
+              <h3 className="font-semibold mb-2">{t.trackYourComplaint}</h3>
               <p className="text-sm text-muted-foreground mb-3">
-                Enter your complaint ID to see real-time status updates and contact information.
+                {t.trackInstruction}
               </p>
               <Badge variant="outline" className="border-civic-saffron text-civic-saffron">
-                Real-time Tracking
+                {t.realTimeBadge}
               </Badge>
             </CardContent>
           </Card>
